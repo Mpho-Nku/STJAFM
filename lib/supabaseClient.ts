@@ -1,6 +1,4 @@
-'use client'
-import { createClientComponentClient } from '@supabase/auth-helpers-nextjs'
-import type { Database } from '@/types/supabase' // optional if you generated types
+'use client';
+import { createClientComponentClient } from '@supabase/auth-helpers-nextjs';
 
-// If you don’t have generated types, you can omit <Database>
-export const supabase = createClientComponentClient<Database>()
+export const supabase = createClientComponentClient();

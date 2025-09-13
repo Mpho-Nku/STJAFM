@@ -1,8 +1,18 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/page": "app/page.js",
-  "/events/page": "app/events/page.js",
+  "/churches/[id]/edit/page": "app/churches/[id]/edit/page.js",
+  "/about/page": "app/about/page.js",
+  "/circuits/page": "app/circuits/page.js",
+  "/churches/page": "app/churches/page.js",
+  "/auth/callback/page": "app/auth/callback/page.js",
   "/dashboard/page": "app/dashboard/page.js",
+  "/events/[id]/edit/page": "app/events/[id]/edit/page.js",
+  "/circuits/[id]/page": "app/circuits/[id]/page.js",
+  "/events/[id]/page": "app/events/[id]/page.js",
+  "/feeback/page": "app/feeback/page.js",
+  "/page": "app/page.js",
   "/churches/[id]/page": "app/churches/[id]/page.js",
-  "/auth/callback/page": "app/auth/callback/page.js"
+  "/saved-events/page": "app/saved-events/page.js",
+  "/events/page": "app/events/page.js",
+  "/explore/page": "app/explore/page.js"
 }
