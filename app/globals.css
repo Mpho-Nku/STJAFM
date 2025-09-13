@@ -1,0 +1,38 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #ffffff;         /* White background */
+  --card: #f0f6ff;       /* Light blue-tinted card */
+  --muted: #6b7280;      /* Neutral gray for text */
+  --brand-accent: #3b82f6; /* Tailwind blue-500 */
+}
+
+body { 
+  @apply bg-white text-slate-900; 
+}
+
+/* Cards */
+.card { 
+  @apply bg-[var(--card)] rounded-2xl border border-blue-200 shadow-lg; 
+}
+
+/* Buttons */
+.btn  { 
+  @apply inline-flex items-center justify-center rounded-xl px-4 py-2 font-medium border border-blue-300 text-blue-700 hover:bg-blue-100; 
+}
+.btn-primary { 
+  @apply bg-[var(--brand-accent)] text-white border-transparent hover:bg-blue-600; 
+}
+
+/* Inputs */
+.input { 
+  @apply w-full rounded-xl bg-white border border-blue-300 px-3 py-2 
+         focus:outline-none focus:ring-2 focus:ring-[var(--brand-accent)]; 
+}
+
+/* Labels */
+.label { 
+  @apply text-sm text-slate-600; 
+}
