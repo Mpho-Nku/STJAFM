@@ -1,13 +1,15 @@
+
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Image from 'next/image';
 import Link from 'next/link';
 
+import HeroSection from '@/components/HeroSection';
 export default function Home() {
   const [churches, setChurches] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
-
+   <HeroSection />
   useEffect(() => {
     // Get logged-in user
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
