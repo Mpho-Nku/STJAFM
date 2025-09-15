@@ -1,73 +1,299 @@
 'use client';
-import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
 import { supabase } from '@/lib/supabaseClient';
-import { BellIcon } from '@heroicons/react/24/outline';
+import { useEffect, useState } from 'react';
+import { BellIcon, Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export default function NotificationBell() {
+export default function NavBar() {
   const [user, setUser] = useState<any>(null);
-  const [events, setEvents] = useState<any[]>([]);
   const [open, setOpen] = useState(false);
+  const [notifications, setNotifications] = useState<any[]>([]);
+  const [unread, setUnread] = useState(false);
+  const [weekendEvents, setWeekendEvents] = useState<any[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
-    // ✅ Get current user
-    supabase.auth.getUser().then(({ data }) => {
-      setUser(data?.user || null);
-    });
+    supabase.auth.getUser().then(({ data }) => setUser(data.user));
   }, []);
 
+  // 🔔 Fetch latest notifications + subscribe to realtime updates
+useEffect(() => {
+  if (!user) return;
+
+  const fetchNotifications = async () => {
+    const { data } = await supabase
+      .from('events')
+      .select('id,title,start_time,church_id')
+      .order('start_time', { ascending: true })
+      .limit(5);
+
+    const events = data || [];
+    setNotifications(events);
+
+    const seen = JSON.parse(localStorage.getItem('seenNotifications') || '[]');
+    const unseen = events.some((e) => !seen.includes(e.id));
+    setUnread(unseen);
+  };
+
+  fetchNotifications();
+
+  // ✅ Use channel.on with "*" to catch all events
+  const channel = supabase
+    .channel('events-changes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'events' },
+      (payload) => {
+        console.log('Realtime change:', payload);
+
+        if (payload.eventType === 'INSERT') {
+          setNotifications((prev) => [payload.new, ...prev].slice(0, 5));
+          setUnread(true);
+        }
+      }
+    )
+    .subscribe((status) => {
+      console.log('Subscription status:', status);
+    });
+
+  return () => {
+    supabase.removeChannel(channel);
+  };
+}, [user]);
+
+
+  // 📅 Fetch weekend events
   useEffect(() => {
     if (!user) return;
 
-    // ✅ Fetch upcoming events
+    const now = new Date();
+
+    const friday = new Date(now);
+    friday.setDate(now.getDate() - now.getDay() + 5);
+    friday.setHours(0, 0, 0, 0);
+
+    const sunday = new Date(friday);
+    sunday.setDate(friday.getDate() + 2);
+    sunday.setHours(23, 59, 59, 999);
+
+    if (now < friday) {
+      friday.setDate(friday.getDate() - 7);
+      sunday.setDate(sunday.getDate() - 7);
+    }
+
     supabase
       .from('events')
-      .select('id, title, start_time, location')
-      .gt('start_time', new Date().toISOString())
+      .select('id,title,start_time,church_id')
+      .gte('start_time', friday.toISOString())
+      .lte('start_time', sunday.toISOString())
       .order('start_time', { ascending: true })
-      .limit(5)
-      .then(({ data, error }) => {
-        if (!error && data) setEvents(data);
-      });
+      .then(({ data }) => setWeekendEvents(data || []));
   }, [user]);
 
-  return (
-    <div className="relative">
-      {/* Bell icon button */}
-      <button
-        onClick={() => setOpen(!open)}
-        className="relative p-2 rounded-full hover:bg-gray-200 focus:outline-none"
-      >
-        <BellIcon className="h-6 w-6 text-gray-700" />
-        {events.length > 0 && (
-          <span className="absolute top-1 right-1 inline-flex h-2 w-2 rounded-full bg-red-600"></span>
-        )}
-      </button>
+  const markAsRead = () => {
+    const seen = notifications.map((n) => n.id);
+    localStorage.setItem('seenNotifications', JSON.stringify(seen));
+    setUnread(false);
+  };
 
-      {/* Dropdown */}
-      {open && (
-        <div className="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg border border-gray-200 z-50">
-          <div className="p-3 font-semibold border-b">Notifications</div>
-          <ul className="max-h-60 overflow-y-auto">
-            {events.length === 0 && (
-              <li className="p-3 text-sm text-gray-500">No upcoming events</li>
-            )}
-            {events.map((event) => (
-              <li
-                key={event.id}
-                className="p-3 hover:bg-gray-100 cursor-pointer border-b"
-              >
-                <p className="font-medium text-gray-800">{event.title}</p>
-                <p className="text-xs text-gray-500">
-                  {new Date(event.start_time).toLocaleString()}
-                </p>
-                {event.location && (
-                  <p className="text-xs text-gray-400">{event.location}</p>
-                )}
-              </li>
-            ))}
-          </ul>
+  const signIn = async () => {
+    await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: `${window.location.origin}/auth/callback` },
+    });
+  };
+
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    location.reload();
+  };
+
+  return (
+    <div className="w-full border-b border-blue-800 sticky top-0 z-30 backdrop-blur bg-white/80">
+      <div className="max-w-6xl mx-auto flex items-center justify-between px-4 py-3">
+        {/* Left: Logo */}
+        <div className="flex items-center gap-3">
+          <Link href="/" className="text-xl font-bold text-blue-900">
+            <Image
+              src="/logo.png"
+              width={40}
+              height={40}
+              alt="logo"
+              className="rounded-full"
+            />
+          </Link>
         </div>
-      )}
+
+        {/* Right: Auth + Notifications */}
+        <div className="flex items-center gap-2 relative">
+          {!user ? (
+            <>
+              <Link href="/auth" className="btn">
+                Login
+              </Link>
+              <Link href="/auth" className="btn btn-primary">
+                Sign up
+              </Link>
+            </>
+          ) : (
+            <>
+              <Link href="/dashboard" className="btn">
+                Dashboard
+              </Link>
+              <Link href="/saved-events" className="btn">
+                Saved Events
+              </Link>
+              <button className="btn" onClick={signOut}>
+                Sign out
+              </button>
+
+              {/* 🔔 Notification Bell */}
+              <div className="relative">
+                <button
+                  className="p-2 relative"
+                  onClick={() => {
+                    setOpen(!open);
+                    if (!open) markAsRead();
+                  }}
+                >
+                  <BellIcon
+                    className={`h-6 w-6 ${
+                      unread ? 'text-blue-600' : 'text-gray-400'
+                    }`}
+                  />
+                  {unread && (
+                    <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                  )}
+                </button>
+
+                {/* Dropdown notifications */}
+                {open && (
+                  <div className="absolute right-0 mt-2 w-80 bg-white shadow-lg rounded-lg border border-gray-200 z-50">
+                    <div className="p-3 font-semibold text-blue-900 border-b">
+                      Notifications
+                    </div>
+
+                    {/* Latest Events */}
+                    <ul className="max-h-48 overflow-y-auto">
+                      {notifications.map((n) => (
+                        <li
+                          key={n.id}
+                          className="p-3 border-b hover:bg-gray-50"
+                        >
+                          <Link
+                            href={`/churches/${n.church_id}`}
+                            onClick={() => setOpen(false)}
+                          >
+                            <div className="font-medium text-blue-800">
+                              {n.title}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(n.start_time).toLocaleString()}
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                      {notifications.length === 0 && (
+                        <li className="p-3 text-sm text-gray-500">
+                          No new events.
+                        </li>
+                      )}
+                    </ul>
+
+                    {/* Weekend Events */}
+                    <div className="p-3 font-semibold text-blue-900 border-t">
+                      This Weekend
+                    </div>
+                    <ul className="max-h-40 overflow-y-auto">
+                      {weekendEvents.map((ev) => (
+                        <li
+                          key={ev.id}
+                          className="p-3 border-b hover:bg-gray-50"
+                        >
+                          <Link
+                            href={`/churches/${ev.church_id}`}
+                            onClick={() => setOpen(false)}
+                          >
+                            <div className="font-medium text-blue-800">
+                              {ev.title}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {new Date(ev.start_time).toLocaleString()}
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                      {weekendEvents.length === 0 && (
+                        <li className="p-3 text-sm text-gray-500">
+                          No weekend events.
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Mobile menu toggle */}
+        <button
+          className="md:hidden text-blue-900"
+          onClick={() => setMenuOpen(!menuOpen)}
+        >
+          {menuOpen ? <XMarkIcon className="h-7 w-7" /> : <Bars3Icon className="h-7 w-7" />}
+        </button>
+      </div>
+
+      {/* Mobile Menu */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            className="fixed top-0 right-0 w-64 h-full bg-white shadow-lg z-50 p-6 space-y-4"
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'tween' }}
+          >
+            {!user ? (
+              <>
+                <Link href="/auth" className="btn w-full" onClick={() => setMenuOpen(false)}>
+                  Login
+                </Link>
+                <Link
+                  href="/auth"
+                  className="btn btn-primary w-full"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Sign up
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link
+                  href="/dashboard"
+                  className="btn w-full"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Dashboard
+                </Link>
+                <Link
+                  href="/saved-events"
+                  className="btn w-full"
+                  onClick={() => setMenuOpen(false)}
+                >
+                  Saved Events
+                </Link>
+                <button className="btn w-full" onClick={signOut}>
+                  Sign out
+                </button>
+              </>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

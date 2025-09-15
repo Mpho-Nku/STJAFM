@@ -1,15 +1,16 @@
-
 'use client';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import Image from 'next/image';
 import Link from 'next/link';
 
+import FeaturesGrid from '@/components/FeaturesGrid';
 import HeroSection from '@/components/HeroSection';
+
 export default function Home() {
   const [churches, setChurches] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
-   <HeroSection />
+
   useEffect(() => {
     // Get logged-in user
     supabase.auth.getUser().then(({ data }) => setUser(data.user));
@@ -42,7 +43,7 @@ export default function Home() {
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6 space-y-8">
-      {/* ✅ Hero / Welcome card */}
+      {/* ✅ Welcome card */}
       <section className="card p-6 space-y-4">
         <h1 className="text-3xl font-bold text-blue-900">
           Welcome to St John Apostolic Faith Mission
@@ -104,6 +105,9 @@ export default function Home() {
           </div>
         )}
       </section>
+
+      {/* ✅ Features grid (like Uber example you shared) */}
+      <FeaturesGrid />
     </div>
   );
 }
