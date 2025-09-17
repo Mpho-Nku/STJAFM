@@ -1,7 +1,7 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
-  "/saved-events/page": "app/saved-events/page.js",
-  "/churches/page": "app/churches/page.js",
+  "/page": "app/page.js",
+  "/blog/page": "app/blog/page.js",
   "/events/page": "app/events/page.js",
-  "/page": "app/page.js"
+  "/churches/page": "app/churches/page.js",
+  "/about/page": "app/about/page.js"
 }

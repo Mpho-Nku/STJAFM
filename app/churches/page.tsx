@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Link from 'next/link';
 import Image from 'next/image';
 
+import NoResults from '@/components/NoResults';
 export default function ChurchesPage() {
   const [churches, setChurches] = useState<any[]>([]);
   const [search, setSearch] = useState('');
@@ -46,7 +47,9 @@ export default function ChurchesPage() {
 
       {/* Churches list */}
       {filteredChurches.length === 0 ? (
-        <p className="text-gray-500">No churches found.</p>
+        <p className="text-gray-500">
+         <NoResults/>
+        </p>
       ) : (
         <div className="grid md:grid-cols-2 gap-6">
           {filteredChurches.map((church) => (

@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabaseClient';
 import Image from 'next/image';
 import { UserIcon, MapPinIcon } from '@heroicons/react/24/solid';
 
+import NoResults from '@/components/NoResults';
 export default function ChurchDetail() {
   const params = useParams();
   const churchId = params?.id as string;

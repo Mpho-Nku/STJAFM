@@ -5,7 +5,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 
 import FeaturesGrid from '@/components/FeaturesGrid';
-import HeroSection from '@/components/HeroSection';
+import TrendingSection from '@/components/TrendsingSection';
 
 export default function Home() {
   const [churches, setChurches] = useState<any[]>([]);
@@ -104,10 +104,13 @@ export default function Home() {
             ))}
           </div>
         )}
+       <FeaturesGrid />
+      <TrendingSection />
+
       </section>
 
       {/* ✅ Features grid (like Uber example you shared) */}
-      <FeaturesGrid />
+    
     </div>
   );
 }

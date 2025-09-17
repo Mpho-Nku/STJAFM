@@ -8,6 +8,7 @@ export default function EventsPage() {
   const [events, setEvents] = useState<any[]>([]);
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
@@ -16,21 +17,33 @@ export default function EventsPage() {
         const { data: userData } = await supabase.auth.getUser();
         setUser(userData?.user);
 
-        // ✅ Fetch all events with church info
+        // ✅ Fetch all events with optional church info
         const { data, error } = await supabase
           .from('events')
-          .select(
-            'id, title, start_time, description, is_saved_by, church:church_id(name, suburb, township)'
-          )
+          .select(`
+            id,
+            title,
+            start_time,
+            description,
+            is_saved_by,
+            church:church_id (
+              id,
+              name,
+              suburb,
+              township
+            )
+          `)
           .order('start_time', { ascending: true });
 
         if (error) {
-          console.error('Events fetch error:', error.message);
+          console.error('❌ Events fetch error:', error.message);
+          setErrorMsg(error.message);
         } else {
           setEvents(data || []);
         }
-      } catch (err) {
-        console.error('Unexpected error:', err);
+      } catch (err: any) {
+        console.error('❌ Unexpected error:', err);
+        setErrorMsg('Something went wrong loading events.');
       } finally {
         setLoading(false);
       }
@@ -55,7 +68,7 @@ export default function EventsPage() {
       .eq('id', event.id);
 
     if (error) {
-      console.error('Save/Unsave error:', error.message);
+      console.error('❌ Save/Unsave error:', error.message);
       alert('Something went wrong, please try again');
     } else {
       // ✅ update UI immediately
@@ -67,8 +80,22 @@ export default function EventsPage() {
     }
   };
 
-  if (loading) return <div>Loading events...</div>;
-  if (events.length === 0) return <div className="text-gray-500">No events yet.</div>;
+  // ✅ Loading state
+  if (loading) return <div className="text-gray-500">Loading events...</div>;
+
+  // ✅ Error state
+  if (errorMsg) {
+    return (
+      <div className="max-w-2xl mx-auto p-6 text-red-600">
+        Failed to load events: {errorMsg}
+      </div>
+    );
+  }
+
+  // ✅ Empty state
+  if (events.length === 0) {
+    return <div className="text-gray-500 p-6">No events yet.</div>;
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
@@ -99,7 +126,8 @@ export default function EventsPage() {
               {/* Church Info */}
               {event.church && (
                 <p className="text-xs text-gray-500 mt-2">
-                  {event.church.name} – {event.church.suburb}, {event.church.township}
+                  {event.church.name} – {event.church.suburb},{' '}
+                  {event.church.township}
                 </p>
               )}
 
